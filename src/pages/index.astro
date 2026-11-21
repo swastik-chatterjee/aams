@@ -1,0 +1,181 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Icon from '../components/Icon.astro';
+
+const { user } = Astro.locals;
+
+// Already logged in? Straight to the dashboard.
+if (user) {
+  return Astro.redirect('/dashboard', 302);
+}
+
+const features = [
+  {
+    icon: 'mail',
+    title: 'magic-link login',
+    body: 'Type your email, click the link we send you — that is the entire auth experience. No passwords, no OAuth dance. Appwrite emails the link itself.',
+    color: 'text-purple',
+    border: 'hover:border-purple/60',
+  },
+  {
+    icon: 'box',
+    title: 'one site = one markdown file',
+    body: 'Every site you create is stored as a single markdown file inside your own Appwrite Storage bucket. No lock-in: export is literally a file download.',
+    color: 'text-cyan',
+    border: 'hover:border-cyan/60',
+  },
+  {
+    icon: 'link',
+    title: 'sites at /username/sitename',
+    body: 'Pick a username once — it becomes your namespace. Create as many sites as you like; each goes live at your domain instantly.',
+    color: 'text-green',
+    border: 'hover:border-green/60',
+  },
+  {
+    icon: 'moon',
+    title: 'dracula, always',
+    body: 'Syntax-highlighted code, terminal aesthetics and the official Dracula palette — for your dashboard and every site you publish.',
+    color: 'text-pink',
+    border: 'hover:border-pink/60',
+  },
+];
+
+const steps = [
+  {
+    n: '01',
+    title: 'log in with a magic link',
+    body: 'Enter your email on the login page. Appwrite sends you a one-time link — click it and you are in. New emails automatically become accounts.',
+  },
+  {
+    n: '02',
+    title: 'claim your username',
+    body: 'First visit, you pick a username. It anchors every site you will ever make: yoursite.com/<span class="text-purple">username</span>/…',
+  },
+  {
+    n: '03',
+    title: 'create sites, write markdown',
+    body: 'Each site starts life as a starter markdown file with front-matter. Edit in the split-view editor, hit save, and the page is live at /username/<span class="text-purple">sitename</span>.',
+  },
+];
+---
+
+<BaseLayout user={user}>
+  <!-- hero -->
+  <section class="drac-grid border-b border-line/60">
+    <div class="mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:px-6 md:grid-cols-[1.1fr_0.9fr] md:py-24">
+      <div class="flex min-w-0 flex-col justify-center">
+        <p class="mb-4 text-xs text-muted">
+          <span class="text-green">~</span>/cms <span class="text-muted">—</span> welcome to the night shift<span class="drac-caret"></span>
+        </p>
+        <h1 class="text-3xl font-bold leading-tight tracking-tight sm:text-4xl md:text-5xl">
+          your markdown.<br />
+          <span class="text-purple [text-shadow:0_0_28px_rgba(189,147,249,0.45)]">your sites.</span><br />
+          <span class="text-pink">one link</span> to log in.
+        </h1>
+        <p class="mt-5 max-w-xl text-sm leading-relaxed text-muted sm:text-base">
+          Dracula CMS is a tiny content platform built on <span class="text-fg">Astro</span> and
+          <span class="text-fg">Appwrite</span>. Log in with a magic link, create as many sites as
+          you want — every site is a single markdown file in your own Appwrite Storage, served at
+          <code class="rounded bg-panel px-1.5 py-0.5 text-cyan">/username/sitename</code>.
+        </p>
+        <div class="mt-8 flex flex-wrap items-center gap-3">
+          <a
+            href="/login"
+            class="drac-glow inline-flex min-h-12 items-center gap-2 rounded-lg border border-purple/60 bg-purple px-5 py-3 text-sm font-bold text-bg transition hover:border-pink hover:bg-pink hover:drac-glow-pink"
+          >
+            <Icon name="mail" size={16} />
+            enter the night
+          </a>
+          <a
+            href="#how"
+            class="inline-flex min-h-12 items-center gap-2 rounded-lg border border-line bg-panel px-5 py-3 text-sm text-muted transition hover:border-muted hover:text-fg"
+          >
+            how it works
+            <Icon name="arrowLeft" size={14} class="rotate-[-90deg]" />
+          </a>
+        </div>
+      </div>
+
+      <!-- terminal mock -->
+      <div class="flex min-w-0 items-center">
+        <div class="w-full overflow-hidden rounded-xl border border-line bg-panel shadow-2xl">
+          <div class="flex items-center gap-1.5 border-b border-line bg-raised/60 px-4 py-2.5">
+            <span class="h-2.5 w-2.5 rounded-full bg-red"></span>
+            <span class="h-2.5 w-2.5 rounded-full bg-yellow"></span>
+            <span class="h-2.5 w-2.5 rounded-full bg-green"></span>
+            <span class="ml-3 text-[11px] text-muted">jane@dracula-cms: ~/sites</span>
+          </div>
+          <pre class="overflow-x-auto p-4 text-[12.5px] leading-relaxed"><code><span class="text-purple">$</span> <span class="text-fg">drac whoami</span>
+<span class="text-muted"># logged in via magic link</span>
+<span class="text-cyan">jane@example.com</span>
+
+<span class="text-purple">$</span> <span class="text-fg">drac new "midnight notes"</span>
+<span class="text-green">✓</span> created <span class="text-yellow">midnight-notes.md</span>
+<span class="text-green">✓</span> stored in appwrite storage
+
+<span class="text-purple">$</span> <span class="text-fg">curl -I https://cms.example.dev/jane/midnight-notes</span>
+<span class="text-muted">HTTP/2 200</span>
+<span class="text-muted">content-type: text/html; charset=utf-8</span>
+
+<span class="text-purple">$</span> <span class="drac-caret"></span></code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- features -->
+  <section class="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+    <div class="grid gap-4 sm:grid-cols-2">
+      {
+        features.map((f) => (
+          <article class={`group rounded-xl border border-line bg-panel/70 p-6 transition ${f.border}`}>
+            <div class="mb-3 flex items-center gap-2.5">
+              <span class={`inline-flex rounded-lg border border-line bg-raised p-2 ${f.color}`}>
+                <Icon name={f.icon} size={18} />
+              </span>
+              <h2 class="text-sm font-bold tracking-tight">{f.title}</h2>
+            </div>
+            <p class="text-[13px] leading-relaxed text-muted">{f.body}</p>
+          </article>
+        ))
+      }
+    </div>
+  </section>
+
+  <!-- how it works -->
+  <section id="how" class="border-t border-line/60 bg-panel/30">
+    <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+      <h2 class="text-lg font-bold tracking-tight">
+        <span class="text-purple">##</span> how it works
+      </h2>
+      <div class="mt-8 grid gap-4 md:grid-cols-3">
+        {
+          steps.map((s) => (
+            <article class="relative rounded-xl border border-line bg-panel p-6">
+              <p class="mb-3 text-2xl font-bold text-line">{s.n}</p>
+              <h3 class="mb-2 text-sm font-bold tracking-tight text-fg">{s.title}</h3>
+              <p class="text-[13px] leading-relaxed text-muted" set:html={s.body} />
+            </article>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- cta -->
+  <section class="border-t border-line/60">
+    <div class="mx-auto max-w-6xl px-4 py-16 text-center sm:px-6">
+      <p class="text-xs text-muted">ready when you are</p>
+      <h2 class="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
+        the night is <span class="text-green">young</span>.
+      </h2>
+      <a
+        href="/login"
+        class="drac-glow mt-7 inline-flex min-h-12 items-center gap-2 rounded-lg border border-purple/60 bg-purple px-6 py-3 text-sm font-bold text-bg transition hover:border-pink hover:bg-pink hover:drac-glow-pink"
+      >
+        <Icon name="mail" size={16} />
+        get your magic link
+      </a>
+    </div>
+  </section>
+</BaseLayout>

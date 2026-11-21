@@ -1,0 +1,112 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Icon from '../components/Icon.astro';
+import { config } from '../lib/config';
+
+const { user } = Astro.locals;
+if (user) {
+  return Astro.redirect('/dashboard', 302);
+}
+
+// Flash state after the form POST to /api/auth/request-token.
+const sent = Astro.url.searchParams.get('sent') === '1';
+const sentEmail = Astro.url.searchParams.get('email') ?? '';
+const error = Astro.url.searchParams.get('error') ?? '';
+
+const errorMessages: Record<string, string> = {
+  invalid_email: 'That does not look like a valid email address.',
+  not_configured:
+    'Appwrite is not configured on this server yet — magic links cannot be sent. See the README.',
+  throttled: 'A login link was already sent. Please wait a minute before requesting another.',
+  rate_limited: 'Too many login emails requested. Give it a moment, then try again.',
+  platform_missing:
+    'This app\'s hostname is not registered as a Web Platform in your Appwrite console, so Appwrite refused to send the link. See README step 3.',
+  send_failed: 'Something went wrong while sending the email. Please try again.',
+};
+const errorMessage = error ? (errorMessages[error] ?? 'Something went wrong. Please try again.') : '';
+---
+
+<BaseLayout title="login" user={user}>
+  <section class="mx-auto flex max-w-md flex-col justify-center px-4 py-16 sm:px-6">
+    <div class="mb-8 text-center">
+      <p class="text-xs text-muted"><span class="text-green">~</span>/auth/login</p>
+      <h1 class="mt-2 text-2xl font-bold tracking-tight">
+        one <span class="text-purple">magic link</span>, no password
+      </h1>
+      <p class="mt-3 text-sm leading-relaxed text-muted">
+        enter your email and appwrite will send you a login link.
+        it lands in your inbox and lives for one hour.
+      </p>
+    </div>
+
+    {
+      sent ? (
+        <div class="rounded-xl border border-green/50 bg-green/10 p-5 text-center">
+          <p class="mx-auto mb-3 inline-flex rounded-lg border border-green/40 bg-panel p-2.5 text-green">
+            <Icon name="mail" size={22} />
+          </p>
+          <h2 class="text-sm font-bold text-green">link sent</h2>
+          <p class="mt-2 text-[13px] leading-relaxed text-muted">
+            a magic link is on its way to
+            <span class="text-fg">{sentEmail}</span>. click it and you will be signed in.
+          </p>
+          <p class="mt-3 text-[11px] leading-relaxed text-muted">
+            nothing arrived? check spam — or
+            <a href="/login" class="text-cyan underline underline-offset-2">send another</a>.
+          </p>
+        </div>
+      ) : (
+        <form
+          action="/api/auth/request-token"
+          method="post"
+          class="rounded-xl border border-line bg-panel p-6"
+        >
+          {errorMessage && (
+            <p
+              class="mb-4 rounded-lg border border-red/50 bg-red/10 px-3.5 py-2.5 text-xs leading-relaxed text-red"
+              role="alert"
+            >
+              {errorMessage}
+            </p>
+          )}
+
+          <label for="email" class="mb-2 block text-xs font-bold text-muted">
+            email
+          </label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            required
+            autocomplete="email"
+            inputmode="email"
+            spellcheck={false}
+            placeholder="you@example.com"
+            class="w-full rounded-lg border border-line bg-bg px-4 py-3 text-sm text-fg placeholder:text-muted/70 transition focus:border-purple focus:outline-none"
+          />
+
+          <button
+            type="submit"
+            class="drac-glow mt-5 inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-purple/60 bg-purple px-5 py-3 text-sm font-bold text-bg transition hover:border-pink hover:bg-pink hover:drac-glow-pink"
+          >
+            <Icon name="mail" size={15} />
+            send my magic link
+          </button>
+
+          <p class="mt-4 text-center text-[11px] leading-relaxed text-muted">
+            new here? the link creates your account automatically.
+          </p>
+        </form>
+      )
+    }
+
+    {
+      !config.isConfigured && (
+        <p class="mt-6 rounded-lg border border-orange/40 bg-orange/10 px-4 py-3 text-[11px] leading-relaxed text-orange">
+          note: appwrite credentials are missing on this server, so the link cannot be sent yet.
+          the README walks you through the 10-minute setup.
+        </p>
+      )
+    }
+  </section>
+</BaseLayout>

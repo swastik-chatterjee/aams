@@ -1,0 +1,57 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Icon from '../../components/Icon.astro';
+import { createSessionFromToken, MagicLinkError } from '../../lib/auth';
+import { SESSION_COOKIE, SESSION_MAX_AGE, config } from '../../lib/config';
+
+const { user } = Astro.locals;
+if (user) {
+  return Astro.redirect('/dashboard', 302);
+}
+
+const userId = Astro.url.searchParams.get('userId') ?? '';
+const secret = Astro.url.searchParams.get('secret') ?? '';
+
+let failure: string | null = null;
+
+if (!userId || !secret) {
+  failure = 'This page expects a magic link — it needs both a userId and a secret. Open the link from your email, or request a fresh one below.';
+} else if (!config.isConfigured) {
+  failure = 'Appwrite is not configured on this server, so the link cannot be exchanged for a session. See the README.';
+} else {
+  try {
+    const sessionSecret = await createSessionFromToken(userId, secret);
+    Astro.cookies.set(SESSION_COOKIE, sessionSecret, {
+      path: '/',
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: config.siteUrl.startsWith('https://'),
+      maxAge: SESSION_MAX_AGE,
+    });
+    return Astro.redirect('/dashboard', 303);
+  } catch (err) {
+    failure = err instanceof MagicLinkError ? err.message : 'This login link could not be verified.';
+  }
+}
+---
+
+<BaseLayout title="verify" user={null}>
+  <section class="mx-auto flex max-w-md flex-col justify-center px-4 py-16 sm:px-6">
+    <div class="rounded-xl border border-line bg-panel p-6 text-center">
+      <p class="mx-auto mb-4 inline-flex rounded-lg border border-red/40 bg-bg p-2.5 text-red">
+        <Icon name="moon" size={22} />
+      </p>
+      <h1 class="text-sm font-bold text-red">the link did not work</h1>
+      <p class="mt-2 text-[13px] leading-relaxed text-muted">
+        {failure}
+      </p>
+      <a
+        href="/login"
+        class="mt-6 inline-flex min-h-11 items-center gap-2 rounded-lg border border-purple/60 bg-purple px-5 py-2.5 text-sm font-bold text-bg transition hover:border-pink hover:bg-pink"
+      >
+        <Icon name="mail" size={14} />
+        request a fresh link
+      </a>
+    </div>
+  </section>
+</BaseLayout>

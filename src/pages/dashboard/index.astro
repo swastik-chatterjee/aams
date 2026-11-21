@@ -1,0 +1,231 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Icon from '../../components/Icon.astro';
+import { getProfile, listSites, slugify } from '../../lib/sites';
+import { RESERVED_USERNAMES } from '../../lib/config';
+import type { SiteRecord } from '../../lib/sites';
+
+const user = Astro.locals.user!;
+const profile = await getProfile(user.$id);
+const sites: SiteRecord[] = profile ? await listSites(user.$id) : [];
+
+// Suggest a username from the email local part.
+const emailLocal = (user.email ?? 'user').split('@')[0]?.toLowerCase() ?? 'user';
+const suggestedUsername = slugify(emailLocal).slice(0, 32) || 'user';
+
+// Error flashes (redirects back from the API routes).
+const error = Astro.url.searchParams.get('error') ?? '';
+const errorText: Record<string, string> = {
+  invalid_username: 'That username is not allowed — use 3–32 lowercase letters, numbers and dashes.',
+  reserved_username: 'That username is reserved. Pick another.',
+  username_taken: 'That username is already taken. Pick another.',
+  profile_failed: 'Could not save your username. Try again.',
+  invalid_name: 'Give your site a name first.',
+  invalid_slug: 'Site URLs use lowercase letters, numbers and dashes.',
+  reserved_slug: 'That site URL is reserved. Pick another.',
+  slug_taken: 'You already have a site at that URL. Pick another.',
+  no_profile: 'Pick a username before creating sites.',
+  create_failed: 'Could not create the site. Try again.',
+};
+const errorMessage = error ? (errorText[error] ?? 'Something went wrong.') : '';
+
+const reservedList = (RESERVED_USERNAMES as readonly string[]).join(',');
+---
+
+<BaseLayout title="dashboard" user={user}>
+  <section class="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+    {
+      !profile ? (
+        /* ── onboarding: claim a username ───────────────────── */
+        <div class="mx-auto max-w-lg">
+          <p class="text-xs text-muted">
+            <span class="text-green">~</span>/welcome <span class="text-muted">— first things first</span>
+          </p>
+          <h1 class="mt-2 text-2xl font-bold tracking-tight">
+            claim your <span class="text-purple">username</span>
+          </h1>
+          <p class="mt-3 text-sm leading-relaxed text-muted">
+            this becomes your URL namespace — every site you create will live at
+            <code class="rounded bg-panel px-1.5 py-0.5 text-cyan">/username/sitename</code>.
+            choose wisely: it cannot be changed later.
+          </p>
+
+          {errorMessage && (
+            <p class="mt-4 rounded-lg border border-red/50 bg-red/10 px-3.5 py-2.5 text-xs leading-relaxed text-red" role="alert">
+              {errorMessage}
+            </p>
+          )}
+
+          <form action="/api/profile" method="post" class="mt-6 rounded-xl border border-line bg-panel p-6" id="username-form">
+            <label for="username" class="mb-2 block text-xs font-bold text-muted">username</label>
+            <div class="flex items-center rounded-lg border border-line bg-bg focus-within:border-purple">
+              <span class="pl-4 text-sm text-muted select-none">/</span>
+              <input
+                type="text"
+                id="username"
+                name="username"
+                required
+                minlength="3"
+                maxlength="32"
+                spellcheck={false}
+                autocomplete="username"
+                pattern="[a-z0-9]([a-z0-9-]*[a-z0-9])?"
+                value={suggestedUsername}
+                data-reserved={reservedList}
+                class="w-full bg-transparent px-3 py-3 text-sm text-fg placeholder:text-muted/70 focus:outline-none"
+                placeholder="your-name"
+              />
+            </div>
+            <p id="username-hint" class="mt-2 text-[11px] text-muted" aria-live="polite">
+              3–32 chars · lowercase letters, numbers, dashes · permanent
+            </p>
+            <button
+              type="submit"
+              class="drac-glow mt-5 inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-purple/60 bg-purple px-5 py-3 text-sm font-bold text-bg transition hover:border-pink hover:bg-pink hover:drac-glow-pink"
+            >
+              <Icon name="bolt" size={15} />
+              claim it
+            </button>
+          </form>
+        </div>
+      ) : (
+        /* ── dashboard proper ───────────────────────────────── */
+        <div class="flex flex-col gap-8">
+          <div class="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p class="text-xs text-muted">
+                <span class="text-green">~</span>/{profile.username} <span class="text-muted">— {sites.length} {sites.length === 1 ? 'site' : 'sites'}</span>
+              </p>
+              <h1 class="mt-1.5 text-2xl font-bold tracking-tight">your <span class="text-purple">sites</span></h1>
+            </div>
+
+            <form action="/api/sites" method="post" class="flex flex-wrap items-end gap-2" id="new-site-form">
+              <div>
+                <label for="site-name" class="mb-1.5 block text-[11px] font-bold text-muted">new site name</label>
+                <input
+                  type="text"
+                  id="site-name"
+                  name="name"
+                  required
+                  maxlength="120"
+                  placeholder="midnight notes"
+                  class="min-h-11 w-48 rounded-lg border border-line bg-bg px-3.5 py-2.5 text-sm text-fg placeholder:text-muted/70 transition focus:border-purple focus:outline-none sm:w-56"
+                />
+              </div>
+              <div>
+                <label for="site-slug" class="mb-1.5 block text-[11px] font-bold text-muted">url</label>
+                <div class="flex min-h-11 items-center rounded-lg border border-line bg-bg focus-within:border-purple">
+                  <span class="pl-3 text-xs text-muted select-none">/{profile.username}/</span>
+                  <input
+                    type="text"
+                    id="site-slug"
+                    name="slug"
+                    maxlength="48"
+                    spellcheck={false}
+                    placeholder="auto"
+                    class="h-full w-24 bg-transparent px-2 py-2.5 text-sm text-fg placeholder:text-muted/70 focus:outline-none"
+                  />
+                </div>
+              </div>
+              <button
+                type="submit"
+                class="drac-glow inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-purple/60 bg-purple px-4 py-2.5 text-sm font-bold text-bg transition hover:border-pink hover:bg-pink"
+              >
+                <Icon name="plus" size={15} />
+                create
+              </button>
+            </form>
+          </div>
+
+          {errorMessage && (
+            <p class="rounded-lg border border-red/50 bg-red/10 px-3.5 py-2.5 text-xs leading-relaxed text-red" role="alert">
+              {errorMessage}
+            </p>
+          )}
+
+          {sites.length === 0 ? (
+            <div class="rounded-xl border border-dashed border-line bg-panel/50 px-6 py-16 text-center">
+              <p class="mx-auto mb-4 inline-flex rounded-lg border border-line bg-raised p-3 text-purple">
+                <Icon name="moon" size={26} />
+              </p>
+              <h2 class="mt-4 text-sm font-bold text-fg">no sites yet</h2>
+              <p class="mx-auto mt-2 max-w-sm text-[13px] leading-relaxed text-muted">
+                your first site is one form away. each site is a single markdown file stored in
+                your appwrite storage bucket.
+              </p>
+            </div>
+          ) : (
+            <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" id="site-list">
+              {sites.map((site) => (
+                <li
+                  class="group flex flex-col rounded-xl border border-line bg-panel p-5 transition hover:border-purple/50"
+                  data-site-card
+                  data-site-id={site.id}
+                  data-site-name={site.name}
+                >
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                      <h2 class="truncate text-sm font-bold text-fg">{site.title || site.name}</h2>
+                      <a
+                        href={`/${profile.username}/${site.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="mt-1 block truncate text-xs text-cyan underline-offset-2 hover:underline"
+                      >
+                        /{profile.username}/{site.slug}
+                      </a>
+                    </div>
+                    <span class="shrink-0 rounded border border-line bg-raised px-1.5 py-0.5 text-[10px] text-muted">.md</span>
+                  </div>
+
+                  {site.description && (
+                    <p class="mt-3 line-clamp-2 text-[12px] leading-relaxed text-muted">{site.description}</p>
+                  )}
+
+                  <p class="mt-3 text-[11px] text-muted">
+                    updated <time datetime={site.updatedAt}>{new Date(site.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</time>
+                  </p>
+
+                  <div class="mt-4 flex items-center gap-1.5 border-t border-line/60 pt-3.5 text-xs">
+                    <a
+                      href={`/dashboard/sites/${site.slug}`}
+                      class="inline-flex min-h-9 items-center gap-1.5 rounded-md px-2.5 py-1.5 font-bold text-muted transition hover:bg-raised hover:text-purple"
+                    >
+                      <Icon name="pencil" size={13} /> edit
+                    </a>
+                    <a
+                      href={`/${profile.username}/${site.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="inline-flex min-h-9 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-muted transition hover:bg-raised hover:text-cyan"
+                    >
+                      <Icon name="external" size={13} /> view
+                    </a>
+                    <button
+                      type="button"
+                      class="inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1.5 text-muted transition hover:bg-raised hover:text-green"
+                      data-copy-url={`/${profile.username}/${site.slug}`}
+                    >
+                      <Icon name="copy" size={13} /> copy
+                    </button>
+                    <button
+                      type="button"
+                      class="ml-auto inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1.5 text-muted transition hover:bg-raised hover:text-red"
+                      data-delete-site
+                      data-site-id={site.id}
+                      data-site-label={`/${profile.username}/${site.slug}`}
+                    >
+                      <Icon name="trash" size={13} /> delete
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )
+    }
+  </section>
+</BaseLayout>
+
+<script src="../../components/dashboard/main.ts"></script>

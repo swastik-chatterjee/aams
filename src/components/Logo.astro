@@ -1,0 +1,21 @@
+---
+/** Brand mark: a little terminal window with a Dracula prompt. */
+interface Props {
+  size?: number;
+}
+const { size = 28 } = Astro.props;
+---
+
+<svg
+  width={size}
+  height={size}
+  viewBox="0 0 32 32"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+  aria-hidden="true"
+>
+  <rect x="1" y="3" width="30" height="26" rx="5" fill="#21222c" stroke="#44475a" stroke-width="1.5"></rect>
+  <path d="M6 10.5 10 14l-4 3.5" stroke="#bd93f9" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path>
+  <path d="M13 18h8" stroke="#ff79c6" stroke-width="2.2" stroke-linecap="round"></path>
+  <circle cx="25" cy="9.5" r="1.6" fill="#50fa7b"></circle>
+</svg>

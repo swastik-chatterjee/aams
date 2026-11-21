@@ -1,0 +1,54 @@
+---
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { APP_NAME, config } from '../lib/config';
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  user?: import('node-appwrite').Models.User<Record<string, any>> | null;
+}
+
+const {
+  title,
+  description = 'A Dracula-themed markdown CMS powered by Astro and Appwrite. Log in with a magic link, ship sites at /username/sitename.',
+  user = null,
+} = Astro.props;
+
+const pageTitle = title ? `${title} — ${APP_NAME}` : `${APP_NAME} — markdown sites on Astro + Appwrite`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+  </head>
+  <body class="flex min-h-screen flex-col bg-bg text-fg">
+    <Header user={user} />
+
+    {
+      !config.isConfigured && (
+        <div class="border-b border-orange/40 bg-orange/10">
+          <div class="mx-auto max-w-6xl px-4 py-3 text-xs leading-relaxed text-orange sm:px-6">
+            <strong>appwrite is not configured yet.</strong> copy <code class="rounded bg-panel px-1.5 py-0.5 text-orange">.env.example</code> to
+            <code class="rounded bg-panel px-1.5 py-0.5 text-orange">.env</code>, fill in your Appwrite Cloud credentials, then run{' '}
+            <code class="rounded bg-panel px-1.5 py-0.5 text-orange">npm run setup</code>. magic-link login needs them. see the README for the
+            step-by-step.
+          </div>
+        </div>
+      )
+    }
+
+    <main class="flex-1">
+      <slot />
+    </main>
+
+    <Footer />
+  </body>
+</html>

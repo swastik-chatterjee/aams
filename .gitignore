@@ -1,0 +1,20 @@
+# build output
+dist/
+.astro/
+
+# dependencies
+node_modules/
+
+# environment
+.env
+.env.production
+
+# logs
+*.log
+
+# OS
+.DS_Store
+
+# lockfiles (not shipped with the template)
+package-lock.json
+bun.lock

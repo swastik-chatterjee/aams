@@ -1,0 +1,78 @@
+---
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import { getSiteByUsernameSlug, getSiteMarkdown, SiteError } from '../../lib/sites';
+import { renderMarkdown } from '../../lib/markdown';
+import { config } from '../../lib/config';
+
+const username = (Astro.params.username ?? '').toLowerCase();
+const slug = (Astro.params.sitename ?? '').toLowerCase();
+
+let site = null;
+if (config.isConfigured) {
+  try {
+    site = await getSiteByUsernameSlug(username, slug);
+  } catch {
+    site = null; // Appwrite hiccup — treat as not found rather than crashing
+  }
+}
+
+// Unknown sites render the styled 404 panel with a real 404 status code.
+if (!site) {
+  Astro.response.status = 404;
+}
+
+let html = '';
+let title = '';
+let description = '';
+let loadError: string | null = null;
+
+if (site) {
+  try {
+    const markdown = await getSiteMarkdown(site);
+    const rendered = renderMarkdown(markdown);
+    html = rendered.html;
+    title = rendered.title ?? site.title ?? site.name;
+    description = rendered.description ?? site.description;
+  } catch (err) {
+    loadError =
+      err instanceof SiteError
+        ? err.message
+        : 'Something went wrong while reading this site from Appwrite Storage.';
+  }
+}
+---
+
+{
+  !config.isConfigured ? (
+    <SiteLayout siteTitle="not configured" username={username} slug={slug}>
+      <div class="rounded-xl border border-orange/50 bg-orange/10 p-6 text-center">
+        <h1 class="text-sm font-bold text-orange">the cms is not configured</h1>
+        <p class="mt-2 text-[13px] leading-relaxed text-muted">
+          Appwrite credentials are missing, so published sites cannot be served yet. See the README.
+        </p>
+      </div>
+    </SiteLayout>
+  ) : !site ? (
+    <SiteLayout siteTitle={`/${username}/${slug}`} username={username} slug={slug}>
+      <div class="py-16 text-center">
+        <h1 class="text-4xl font-bold tracking-tight">
+          <span class="text-purple">4</span><span class="text-pink">0</span><span class="text-cyan">4</span>
+        </h1>
+        <p class="mt-4 text-sm text-muted">
+          no site lives at <span class="text-fg">/{username}/{slug}</span> — maybe it was deleted, or it never existed.
+        </p>
+      </div>
+    </SiteLayout>
+  ) : loadError ? (
+    <SiteLayout siteTitle={site.name} username={username} slug={slug}>
+      <div class="rounded-xl border border-red/50 bg-red/10 p-6 text-center">
+        <h1 class="text-sm font-bold text-red">could not load this site</h1>
+        <p class="mt-2 text-[13px] leading-relaxed text-muted">{loadError}</p>
+      </div>
+    </SiteLayout>
+  ) : (
+    <SiteLayout siteTitle={title} siteDescription={description || undefined} username={username} slug={slug}>
+      <article class="prose-dracula" set:html={html} />
+    </SiteLayout>
+  )
+}

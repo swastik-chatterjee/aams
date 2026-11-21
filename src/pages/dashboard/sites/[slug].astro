@@ -1,0 +1,136 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Icon from '../../../components/Icon.astro';
+import { getProfile, getSiteForUser, getSiteMarkdown } from '../../../lib/sites';
+import { renderMarkdown } from '../../../lib/markdown';
+
+const user = Astro.locals.user!;
+const slug = Astro.params.slug ?? '';
+const profile = await getProfile(user.$id);
+const site = await getSiteForUser(user.$id, slug);
+
+if (!site || !profile) {
+  return Astro.redirect('/404', 302);
+}
+
+let content = '';
+try {
+  content = await getSiteMarkdown(site);
+} catch {
+  // The file will be recreated on first save if it's missing.
+  const safeName = site.name.replace(/"/g, "'");
+  content = '---\ntitle: "' + safeName + '"\ndescription: ""\n---\n\n# ' + site.name + '\n';
+}
+
+const initial = renderMarkdown(content);
+const publicPath = `/${profile.username}/${site.slug}`;
+
+// A textarea's value must be HTML-escaped to round-trip exactly
+// (e.g. a literal "</textarea>" inside the user's markdown).
+const contentEscaped = content
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;');
+---
+
+<BaseLayout title={`edit ${site.slug}`} user={user}>
+  <section
+    class="mx-auto max-w-[1440px] px-4 py-6 sm:px-6"
+    data-editor
+    data-site-id={site.id}
+    data-site-slug={site.slug}
+  >
+    <!-- editor toolbar -->
+    <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-panel px-4 py-3">
+      <div class="flex min-w-0 items-center gap-3">
+        <a
+          href="/dashboard"
+          class="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-muted transition hover:bg-raised hover:text-fg"
+        >
+          <Icon name="arrowLeft" size={14} />
+          sites
+        </a>
+        <div class="hidden h-6 w-px bg-line sm:block"></div>
+        <div class="min-w-0">
+          <p class="truncate text-sm font-bold">{site.title || site.name}</p>
+          <a
+            href={publicPath}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="truncate text-[11px] text-cyan underline-offset-2 hover:underline"
+          >
+            {publicPath}
+          </a>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-1.5">
+        <span id="save-state" class="mr-1 hidden text-[11px] text-muted sm:inline" aria-live="polite"></span>
+        <a
+          href={publicPath}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-line bg-raised px-3 py-1.5 text-xs text-muted transition hover:border-cyan/60 hover:text-cyan"
+        >
+          <Icon name="external" size={13} /> view
+        </a>
+        <button
+          type="button"
+          id="save-btn"
+          class="drac-glow inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-md border border-purple/60 bg-purple px-4 py-1.5 text-xs font-bold text-bg transition hover:border-pink hover:bg-pink disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Icon name="save" size={13} /> save
+        </button>
+        <button
+          type="button"
+          id="delete-btn"
+          class="inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-md border border-line bg-raised px-3 py-1.5 text-xs text-muted transition hover:border-red/60 hover:text-red"
+        >
+          <Icon name="trash" size={13} /> delete
+        </button>
+      </div>
+    </div>
+
+    <!-- split view -->
+    <div class="mt-4 grid gap-4 lg:grid-cols-2">
+      <div class="flex min-h-70 flex-col rounded-xl border border-line bg-panel lg:h-[calc(100vh-190px)]">
+        <div class="flex items-center justify-between border-b border-line px-4 py-2.5">
+          <p class="text-[11px] font-bold text-muted">
+            <span class="text-purple">▍</span> markdown
+          </p>
+          <p class="text-[11px] text-muted"><span id="word-count">0</span> words</p>
+        </div>
+        <textarea
+          id="md-editor"
+          spellcheck={false}
+          wrap="off"
+          class="h-full min-h-[420px] w-full flex-1 resize-none rounded-b-xl bg-transparent p-4 font-mono text-[13px] leading-relaxed text-fg caret-pink focus:outline-none"
+          placeholder="# start typing markdown…"
+          set:html={contentEscaped}
+        ></textarea>
+      </div>
+
+      <div class="flex min-h-70 flex-col rounded-xl border border-line bg-panel lg:h-[calc(100vh-190px)]">
+        <div class="flex items-center justify-between border-b border-line px-4 py-2.5">
+          <p class="text-[11px] font-bold text-muted">
+            <span class="text-cyan">▍</span> preview
+          </p>
+          <p class="text-[11px] text-muted" id="preview-state">live</p>
+        </div>
+        <div
+          id="md-preview"
+          class="prose-dracula h-full min-h-[420px] flex-1 overflow-y-auto p-5"
+          set:html={initial.html}
+        >
+        </div>
+      </div>
+    </div>
+
+    <p class="mt-3 text-center text-[11px] text-muted">
+      front-matter tip — set <code class="rounded bg-panel px-1 py-0.5 text-purple">title</code> and
+      <code class="rounded bg-panel px-1 py-0.5 text-purple">description</code> at the top of the file for the page header and SEO tags.
+      <span class="text-muted/70">ctrl/cmd+s saves.</span>
+    </p>
+  </section>
+</BaseLayout>
+
+<script src="../../../components/editor/main.ts"></script>

@@ -1,0 +1,59 @@
+---
+import '../styles/global.css';
+
+/**
+ * Layout for published sites — deliberately minimal chrome so the author's
+ * markdown is the star. Dracula through and through.
+ */
+interface Props {
+  siteTitle: string;
+  siteDescription?: string;
+  username: string;
+  slug: string;
+}
+const { siteTitle, siteDescription, username, slug } = Astro.props;
+
+const pageTitle = siteTitle || `${username}/${slug}`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    {siteDescription && <meta name="description" content={siteDescription} />}
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <meta property="og:title" content={pageTitle} />
+    {siteDescription && <meta property="og:description" content={siteDescription} />}
+  </head>
+  <body class="flex min-h-screen flex-col bg-bg text-fg">
+    <header class="border-b border-line/60 bg-panel/50">
+      <div class="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3.5 sm:px-6">
+        <div class="min-w-0">
+          <p class="truncate text-sm font-bold text-purple">{pageTitle}</p>
+          <p class="truncate text-xs text-muted">/{username}/{slug}</p>
+        </div>
+        <span
+          class="shrink-0 rounded-full border border-line bg-panel px-2.5 py-1 text-[11px] text-muted"
+          title="This site is a markdown file in Appwrite Storage"
+        >
+          .md
+        </span>
+      </div>
+    </header>
+
+    <main class="flex-1">
+      <div class="mx-auto max-w-3xl px-4 py-10 sm:px-6">
+        <slot />
+      </div>
+    </main>
+
+    <footer class="mt-auto border-t border-line/60 bg-panel/40">
+      <div class="mx-auto max-w-3xl px-4 py-4 text-center text-[11px] text-muted sm:px-6">
+        served by dracula-cms — content lives as one markdown file in appwrite storage
+      </div>
+    </footer>
+  </body>
+</html>

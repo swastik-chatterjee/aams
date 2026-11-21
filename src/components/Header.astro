@@ -1,0 +1,56 @@
+---
+import Logo from './Logo.astro';
+import Icon from './Icon.astro';
+import { APP_NAME } from '../lib/config';
+
+interface Props {
+  user: import('node-appwrite').Models.User<Record<string, any>> | null;
+}
+const { user } = Astro.props;
+---
+
+<header class="border-b border-line/70 bg-panel/60 backdrop-blur sticky top-0 z-40">
+  <div class="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
+    <a
+      href="/"
+      class="flex items-center gap-2.5 rounded px-1 py-1 text-sm font-bold tracking-tight text-fg transition hover:text-purple"
+    >
+      <Logo size={24} />
+      <span>{APP_NAME.toLowerCase().replace(' ', '-')}</span>
+    </a>
+
+    <nav class="flex items-center gap-1.5 sm:gap-2" aria-label="Main">
+      {
+        user ? (
+          <>
+            <a
+              href="/dashboard"
+              class="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted transition hover:bg-raised hover:text-fg"
+            >
+              <Icon name="terminal" size={15} />
+              <span class="hidden sm:inline">dashboard</span>
+            </a>
+            <form action="/api/auth/logout" method="post">
+              <button
+                type="submit"
+                class="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted transition hover:bg-raised hover:text-pink"
+                title="Log out"
+              >
+                <Icon name="logout" size={15} />
+                <span class="hidden sm:inline">logout</span>
+              </button>
+            </form>
+          </>
+        ) : (
+          <a
+            href="/login"
+            class="inline-flex min-h-11 items-center gap-2 rounded-lg border border-purple/50 bg-purple px-4 py-2 text-sm font-bold text-bg transition hover:border-pink hover:bg-pink drac-glow"
+          >
+            <Icon name="mail" size={15} />
+            <span>login</span>
+          </a>
+        )
+      }
+    </nav>
+  </div>
+</header>

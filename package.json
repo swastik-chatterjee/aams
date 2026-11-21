@@ -1,0 +1,36 @@
+{
+  "name": "dracula-cms",
+  "version": "1.0.0",
+  "description": "A Dracula-themed markdown CMS with magic-link login, powered by Astro and Appwrite. Every site is a markdown file stored in Appwrite Storage and served at /username/sitename.",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev --host 0.0.0.0 --port 3000 2>&1 | tee dev.log",
+    "build": "astro build",
+    "preview": "astro preview --host 0.0.0.0 --port 3000",
+    "start": "node ./dist/server/entry.mjs",
+    "check": "astro check",
+    "setup": "node scripts/setup.mjs"
+  },
+  "dependencies": {
+    "@astrojs/node": "^11.1.14",
+    "@fontsource-variable/jetbrains-mono": "^5.3.0",
+    "astro": "^7.4.13",
+    "gray-matter": "^4.0.3",
+    "highlight.js": "^11.12.0",
+    "markdown-it": "^14.1.0",
+    "node-appwrite": "^32.0.0",
+    "sanitize-html": "^2.18.2"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.12",
+    "@tailwindcss/vite": "^4.3.5",
+    "@types/markdown-it": "^14.1.2",
+    "@types/node": "^24.0.0",
+    "@types/sanitize-html": "^2.13.0",
+    "tailwindcss": "^4.3.5",
+    "typescript": "^5.9.0"
+  },
+  "engines": {
+    "node": ">=18.17.1"
+  }
+}

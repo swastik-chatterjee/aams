@@ -1,0 +1,15 @@
+---
+import { APP_NAME } from '../lib/config';
+const year = new Date().getFullYear();
+---
+
+<footer class="mt-auto border-t border-line/70 bg-panel/40">
+  <div
+    class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 py-5 text-xs text-muted sm:flex-row sm:px-6"
+  >
+    <p>
+      <span class="text-purple">◆</span> {APP_NAME} — astro × appwrite × markdown
+    </p>
+    <p>sites are single markdown files in your appwrite storage</p>
+  </div>
+</footer>
